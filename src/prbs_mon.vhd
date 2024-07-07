@@ -108,6 +108,8 @@ ARCHITECTURE rtl OF prbs_mon IS
 	SIGNAL sync_bits : unsigned(GENERATOR_BITS DOWNTO 0);
 	SIGNAL count_update : std_logic;
 	SIGNAL errors : std_logic_vector(DATA_W -1 DOWNTO 0);
+	SIGNAL error_counter : std_logic_vector(COUNTER_W -1 DOWNTO 0);
+	SIGNAL data_counter : std_logic_vector(COUNTER_W -1 DOWNTO 0);
 
 	FUNCTION count_ones ( bits : std_logic_vector ) RETURN std_logic_vector IS 
 		VARIABLE v_ones : NATURAL;
@@ -172,21 +174,24 @@ BEGIN
 
 	END PROCESS lfsr_proc;
 
+	error_count <= error_counter;
+	data_count 	<= data_counter;
+
 	count_proc : PROCESS (clk)
 	BEGIN
 		IF clk'EVENT AND clk = '1' THEN
 
 			IF to_integer(sync_bits) > 0 OR count_reset = '1' THEN 
-				error_count <= (OTHERS => '0');
-				data_count  <= (OTHERS => '0');
+				error_counter <= (OTHERS => '0');
+				data_counter  <= (OTHERS => '0');
 			ELSIF count_update = '1' THEN
-				error_count <= std_logic_vector(unsigned(error_count) + unsigned(count_ones(errors)));
-				data_count  <= std_logic_vector(unsigned(data_count)  + to_unsigned(DATA_W, COUNTER_W));
+				error_counter <= std_logic_vector(unsigned(error_counter) + unsigned(count_ones(errors)));
+				data_counter  <= std_logic_vector(unsigned(data_counter)  + to_unsigned(DATA_W, COUNTER_W));
 			END IF;
 
 			IF init = '1' THEN
-				error_count <= (OTHERS => '0');
-				data_count  <= (OTHERS => '0');
+				error_counter <= (OTHERS => '0');
+				data_counter  <= (OTHERS => '0');
 			END IF;				
 
 		END IF;
