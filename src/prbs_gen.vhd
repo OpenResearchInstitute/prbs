@@ -107,8 +107,7 @@ ARCHITECTURE rtl OF prbs_gen IS
 
 	SIGNAL lfsr : std_logic_vector(GENERATOR_W -1 DOWNTO 0);
 	SIGNAL error_arm : std_logic;
-	SIGNAL lfsr_and : std_logic_vector(GENERATOR_W -1 DOWNTO 0);
-	SIGNAL lfsr_bit : std_logic;
+	SIGNAL error_insert_d : std_logic;
 
 BEGIN
 
@@ -117,7 +116,9 @@ BEGIN
 	BEGIN
 		IF clk'EVENT AND clk = '1' THEN
 
-			IF error_insert = '1' THEN
+			error_insert_d <= error_insert;
+
+			IF error_insert = '0' AND error_insert_d = '1' THEN
 				error_arm <= '1';
 			END IF;
 
@@ -156,9 +157,7 @@ BEGIN
 	
 				FOR bit IN 0 TO DATA_W -1 LOOP 
 					v_lfsr := v_lfsr AND polynomial;
-					lfsr_and <= v_lfsr;
 					v_bit  := XOR_REDUCE(v_lfsr);
-					lfsr_bit <= v_bit;
 					v_lfsr := lfsr(GENERATOR_W -2 DOWNTO 0) & v_bit;
 				END LOOP;
 	
