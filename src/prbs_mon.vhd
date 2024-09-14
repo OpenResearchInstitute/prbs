@@ -136,7 +136,7 @@ BEGIN
 		IF clk'EVENT AND clk = '1' THEN
 
 			IF sync = '1' THEN
-				sync_bits <= to_unsigned(GENERATOR_W, GENERATOR_BITS + 1);
+				sync_bits <= to_unsigned(GENERATOR_W-1, GENERATOR_BITS + 1);
 			END IF;
 
 			v_lfsr 			:= lfsr;

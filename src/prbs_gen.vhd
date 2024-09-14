@@ -73,7 +73,7 @@ USE ieee.std_logic_misc.ALL;
 ENTITY prbs_gen IS 
 	GENERIC (
 		DATA_W 			: NATURAL :=  1;
-		GENERATOR_W		: NATURAL := 32;
+		GENERATOR_W		: NATURAL := 31;
 		GENERATOR_BITS 	: NATURAL :=  5
 	);
 	PORT (
