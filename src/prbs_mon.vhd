@@ -137,30 +137,32 @@ BEGIN
 
 			IF sync = '1' THEN
 				sync_bits <= to_unsigned(GENERATOR_W-1, GENERATOR_BITS + 1);
-			END IF;
+			ELSE
 
-			v_lfsr 			:= lfsr;
-			count_update 	<= '0';
+				v_lfsr 			:= lfsr;
+				count_update 	<= '0';
 
-			IF data_in_valid = '1' THEN
-
-				IF sync_bits > 0 THEN
-
-					lfsr <= lfsr(GENERATOR_W - DATA_W -1 DOWNTO DATA_W -1) & data_in;
-					sync_bits <= sync_bits - to_unsigned(DATA_W, GENERATOR_BITS);
-
-				ELSE
-
-					FOR bit IN 0 TO DATA_W -1 LOOP 
-						v_lfsr := v_lfsr AND polynomial;
-						v_bit  := XOR_REDUCE(v_lfsr);
-						v_lfsr := lfsr(GENERATOR_W -2 DOWNTO 0) & v_bit;
-					END LOOP;
-
-					errors 			<= std_logic_vector(resize(unsigned(data_in XOR v_lfsr(DATA_W -1 DOWNTO 0)), DATA_W));
-					lfsr 			<= v_lfsr;
-					count_update 	<= '1';
-
+				IF data_in_valid = '1' THEN
+	
+					IF sync_bits > 0 THEN
+	
+						lfsr <= lfsr(GENERATOR_W - DATA_W -1 DOWNTO DATA_W -1) & data_in;
+						sync_bits <= sync_bits - to_unsigned(DATA_W, GENERATOR_BITS);
+	
+					ELSE
+	
+						FOR bit IN 0 TO DATA_W -1 LOOP 
+							v_lfsr := v_lfsr AND polynomial;
+							v_bit  := XOR_REDUCE(v_lfsr);
+							v_lfsr := lfsr(GENERATOR_W -2 DOWNTO 0) & v_bit;
+						END LOOP;
+	
+						errors 			<= std_logic_vector(resize(unsigned(data_in XOR v_lfsr(DATA_W -1 DOWNTO 0)), DATA_W));
+						lfsr 			<= v_lfsr;
+						count_update 	<= '1';
+	
+					END IF;
+	
 				END IF;
 
 			END IF;
