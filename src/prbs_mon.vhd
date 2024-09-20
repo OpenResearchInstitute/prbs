@@ -83,7 +83,6 @@ ENTITY prbs_mon IS
 		init 				: IN  std_logic;
 
 		sync_manual 		: IN  std_logic;
-		sync_auto 			: IN  std_logic;
 		sync_threshold 		: IN  std_logic_vector(THRESHOLD_W -1 DOWNTO 0);
 		initial_state 		: IN  std_logic_vector(GENERATOR_W -1 DOWNTO 0);
 		polynomial 			: IN  std_logic_vector(GENERATOR_W -1 DOWNTO 0);
