@@ -23,7 +23,7 @@ TOPLEVEL = prbs_tb
 # MODULE is the basename of the Python test file
 MODULE = prbs_sim
 
-TESTCASE = prbs13_loopback_test2
+TESTCASE = prbs13_loopback_test3
 
 # include cocotb's make rules to take care of the simulator setup
 include $(shell cocotb-config --makefiles)/Makefile.sim

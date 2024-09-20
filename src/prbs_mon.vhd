@@ -61,7 +61,7 @@ LIBRARY ieee;
 USE ieee.std_logic_1164.ALL;
 USE ieee.numeric_std.ALL;
 USE ieee.std_logic_misc.ALL;
-
+USE ieee.math_real.ALL;
 
 ------------------------------------------------------------------------------------------------------
 -- ╔═╗┌┐┌┌┬┐┬┌┬┐┬ ┬
@@ -73,15 +73,18 @@ USE ieee.std_logic_misc.ALL;
 ENTITY prbs_mon IS 
 	GENERIC (
 		DATA_W 			: NATURAL :=  1;
-		GENERATOR_W		: NATURAL := 32;
+		GENERATOR_W		: NATURAL := 31;
 		COUNTER_W 		: NATURAL := 32;
-		GENERATOR_BITS 	: NATURAL :=  5
+		THRESHOLD_W 	: NATURAL := 16;
+		TOGGLE_CONTROL  : BOOLEAN := True
 	);
 	PORT (
 		clk 				: IN  std_logic;
 		init 				: IN  std_logic;
 
-		sync 				: IN  std_logic;
+		sync_manual 		: IN  std_logic;
+		sync_auto 			: IN  std_logic;
+		sync_threshold 		: IN  std_logic_vector(THRESHOLD_W -1 DOWNTO 0);
 		initial_state 		: IN  std_logic_vector(GENERATOR_W -1 DOWNTO 0);
 		polynomial 			: IN  std_logic_vector(GENERATOR_W -1 DOWNTO 0);
 		count_reset 		: IN  std_logic;
@@ -104,12 +107,24 @@ END ENTITY prbs_mon;
 
 ARCHITECTURE rtl OF prbs_mon IS 
 
-	SIGNAL lfsr : std_logic_vector(GENERATOR_W -1 DOWNTO 0);
-	SIGNAL sync_bits : unsigned(GENERATOR_BITS DOWNTO 0);
-	SIGNAL count_update : std_logic;
-	SIGNAL errors : std_logic_vector(DATA_W -1 DOWNTO 0);
-	SIGNAL error_counter : std_logic_vector(COUNTER_W -1 DOWNTO 0);
-	SIGNAL data_counter : std_logic_vector(COUNTER_W -1 DOWNTO 0);
+	CONSTANT GENERATOR_BITS	: NATURAL :=  integer(ceil(log2(real(GENERATOR_W))));
+
+	SIGNAL lfsr 			: std_logic_vector(GENERATOR_W -1 DOWNTO 0);
+
+	SIGNAL sync_bits 		: unsigned(GENERATOR_BITS DOWNTO 0);
+
+	SIGNAL count_update 	: std_logic;
+
+	SIGNAL errors 			: std_logic_vector(DATA_W -1 DOWNTO 0);
+
+	SIGNAL error_counter	: std_logic_vector(COUNTER_W -1 DOWNTO 0);
+	SIGNAL data_counter 	: std_logic_vector(COUNTER_W -1 DOWNTO 0);
+
+	SIGNAL sync_manual_d	: std_logic;
+	SIGNAL count_reset_d	: std_logic;
+
+	SIGNAL sync_now 		: std_logic;
+	SIGNAL count_reset_now 	: std_logic;
 
 	FUNCTION count_ones ( bits : std_logic_vector ) RETURN std_logic_vector IS 
 		VARIABLE v_ones : NATURAL;
@@ -129,13 +144,26 @@ ARCHITECTURE rtl OF prbs_mon IS
 
 BEGIN
 
+	sync_now 		<= '1' WHEN (sync_manual = '1' AND NOT TOGGLE_CONTROL) OR 
+				         		(sync_manual /= sync_manual_d AND TOGGLE_CONTROL) OR 
+				         		(to_integer(unsigned(sync_threshold)) > 0 AND 
+				         			unsigned(error_counter) > unsigned(sync_threshold))
+				        ELSE '0';
+
+	count_reset_now <= '1' WHEN (count_reset = '1' AND NOT TOGGLE_CONTROL) OR 
+				         		(count_reset /= count_reset_d AND TOGGLE_CONTROL) 
+				        ELSE '0';
+
 	lfsr_proc : PROCESS (clk)
 		VARIABLE v_lfsr : std_logic_vector(GENERATOR_W -1 DOWNTO 0);
 		VARIABLE v_bit 	 : std_logic;
 	BEGIN
 		IF clk'EVENT AND clk = '1' THEN
 
-			IF sync = '1' THEN
+			sync_manual_d <= sync_manual;
+			count_reset_d <= count_reset;
+
+			IF sync_now = '1' THEN
 				sync_bits <= to_unsigned(GENERATOR_W-1, GENERATOR_BITS + 1);
 			ELSE
 
@@ -168,8 +196,10 @@ BEGIN
 			END IF;
 
 			IF init = '1' THEN 
-				lfsr 		<= initial_state;
-				sync_bits 	<= (OTHERS => '0');
+				lfsr 			<= initial_state;
+				sync_bits 		<= (OTHERS => '0');
+				sync_manual_d 	<= '0';
+				count_reset_d 	<= '0';
 			END IF;
 
 		END IF;
@@ -183,7 +213,7 @@ BEGIN
 	BEGIN
 		IF clk'EVENT AND clk = '1' THEN
 
-			IF to_integer(sync_bits) > 0 OR count_reset = '1' THEN 
+			IF to_integer(sync_bits) > 0 OR count_reset_now = '1' THEN 
 				error_counter <= (OTHERS => '0');
 				data_counter  <= (OTHERS => '0');
 			ELSIF count_update = '1' THEN

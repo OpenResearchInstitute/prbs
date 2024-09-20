@@ -61,7 +61,7 @@ LIBRARY ieee;
 USE ieee.std_logic_1164.ALL;
 USE ieee.numeric_std.ALL;
 USE ieee.std_logic_misc.ALL;
-
+USE ieee.math_real.ALL;
 
 ------------------------------------------------------------------------------------------------------
 -- ╔═╗┌┐┌┌┬┐┬┌┬┐┬ ┬
@@ -74,7 +74,7 @@ ENTITY prbs_gen IS
 	GENERIC (
 		DATA_W 			: NATURAL :=  1;
 		GENERATOR_W		: NATURAL := 31;
-		GENERATOR_BITS 	: NATURAL :=  5
+		TOGGLE_CONTROL  : BOOLEAN := True
 	);
 	PORT (
 		clk 				: IN  std_logic;
@@ -105,6 +105,8 @@ END ENTITY prbs_gen;
 
 ARCHITECTURE rtl OF prbs_gen IS 
 
+	CONSTANT GENERATOR_BITS	: NATURAL :=  integer(ceil(log2(real(GENERATOR_W))));
+
 	SIGNAL lfsr : std_logic_vector(GENERATOR_W -1 DOWNTO 0);
 	SIGNAL error_arm : std_logic;
 	SIGNAL error_insert_d : std_logic;
@@ -118,7 +120,8 @@ BEGIN
 
 			error_insert_d <= error_insert;
 
-			IF error_insert = '0' AND error_insert_d = '1' THEN
+			IF (error_insert = '0' AND error_insert_d = '1' AND NOT TOGGLE_CONTROL) OR 
+			   (error_insert /= error_insert_d AND TOGGLE_CONTROL) THEN
 				error_arm <= '1';
 			END IF;
 

@@ -74,12 +74,18 @@ ENTITY prbs_tb IS
 	GENERIC (
 		DATA_W 			: NATURAL :=  1;
 		GENERATOR_W		: NATURAL := 31;
-		GENERATOR_BITS 	: NATURAL :=  5;
-		COUNTER_W 		: NATURAL := 32
+		COUNTER_W 		: NATURAL := 32;
+		THRESHOLD_W 	: NATURAL := 16;
+		TOGGLE_CONTROL 	: BOOLEAN := True
 	);
 	PORT (
 		clk 				: IN  std_logic;
-		init 				: IN  std_logic;
+		init_gen			: IN  std_logic;
+		init_mon 			: IN  std_logic;
+
+		sync_manual 		: IN  std_logic;
+		sync_auto 			: IN  std_logic;
+		sync_threshold 		: IN  std_logic_vector(THRESHOLD_W -1 DOWNTO 0);
 
 		initial_state 		: IN  std_logic_vector(GENERATOR_W -1 DOWNTO 0);
 		polynomial 			: IN  std_logic_vector(GENERATOR_W -1 DOWNTO 0);
@@ -121,7 +127,7 @@ BEGIN
 
 			prbs_valid <= data_req;
 
-			IF init = '1' THEN
+			IF init_mon = '1' THEN
 				prbs_valid <= '0';
 			END IF;
 
@@ -130,13 +136,13 @@ BEGIN
 
 	U_prbs_gen : ENTITY work.prbs_gen(rtl)
 		GENERIC MAP (
-			DATA_W 			=> DATA_W,
-			GENERATOR_W		=> GENERATOR_W,
-			GENERATOR_BITS 	=> GENERATOR_BITS
+			DATA_W 				=> DATA_W,
+			GENERATOR_W			=> GENERATOR_W,
+			TOGGLE_CONTROL 		=> TOGGLE_CONTROL
 		)
 		PORT MAP (
 			clk 				=> clk,
-			init 				=> init,
+			init 				=> init_gen,
 	
 			initial_state 		=> initial_state,
 			polynomial 			=> polynomial,
@@ -154,19 +160,23 @@ BEGIN
 
 		U_prbs_mon : ENTITY work.prbs_mon(rtl)
 		GENERIC MAP (
-			DATA_W 			=> DATA_W,
-			GENERATOR_W		=> GENERATOR_W,
-			COUNTER_W 		=> COUNTER_W,
-			GENERATOR_BITS 	=> GENERATOR_BITS
+			DATA_W 				=> DATA_W,
+			GENERATOR_W			=> GENERATOR_W,
+			COUNTER_W 			=> COUNTER_W,
+			THRESHOLD_W 		=> THRESHOLD_W,
+			TOGGLE_CONTROL 		=> TOGGLE_CONTROL
 		)
 		PORT MAP (
 			clk 				=> clk,
-			init 				=> init,
+			init 				=> init_mon,
 	
+			sync_manual 		=> sync_manual,
+			sync_auto 			=> sync_auto,
+			sync_threshold 		=> sync_threshold,
+
 			initial_state 		=> initial_state,
 			polynomial 			=> polynomial,
 
-			sync 				=> sync,
 			count_reset 		=> count_reset,
 	
 			data_count 			=> data_count,
