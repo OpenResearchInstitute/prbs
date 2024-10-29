@@ -164,6 +164,7 @@ BEGIN
 
 			IF sync_now = '1' THEN
 				sync_bits <= to_unsigned(GENERATOR_W-1, GENERATOR_BITS + 1);
+				lfsr <= (OTHERS => '0');
 			ELSE
 
 				v_lfsr 			:= lfsr;
