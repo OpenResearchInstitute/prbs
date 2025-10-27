@@ -107,6 +107,7 @@ ARCHITECTURE rtl OF prbs_gen IS
 
 	CONSTANT GENERATOR_BITS	: NATURAL :=  integer(ceil(log2(real(GENERATOR_W))));
 
+	SIGNAL init_d : std_logic;
 	SIGNAL lfsr : std_logic_vector(GENERATOR_W -1 DOWNTO 0);
 	SIGNAL error_arm : std_logic;
 	SIGNAL error_insert_d : std_logic;
@@ -155,6 +156,8 @@ BEGIN
 	BEGIN
 		IF clk'EVENT AND clk = '1' THEN
 
+			init_d <= init;
+
 			IF data_req = '1' THEN
 				v_lfsr := lfsr;
 	
@@ -167,7 +170,7 @@ BEGIN
 				lfsr 	<= v_lfsr;
 			END IF;
 
-			IF init = '1' THEN 
+			IF init = '0' AND init_d = '1' THEN 
 				lfsr <= initial_state;
 			END IF;
 

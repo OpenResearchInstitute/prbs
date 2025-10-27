@@ -108,6 +108,8 @@ ARCHITECTURE rtl OF prbs_mon IS
 
 	CONSTANT GENERATOR_BITS	: NATURAL :=  integer(ceil(log2(real(GENERATOR_W))));
 
+	SIGNAL init_d 			: std_logic;
+
 	SIGNAL lfsr 			: std_logic_vector(GENERATOR_W -1 DOWNTO 0);
 
 	SIGNAL sync_bits 		: unsigned(GENERATOR_BITS DOWNTO 0);
@@ -159,8 +161,10 @@ BEGIN
 	BEGIN
 		IF clk'EVENT AND clk = '1' THEN
 
-			sync_manual_d <= sync_manual;
-			count_reset_d <= count_reset;
+
+			init_d 			<= init;
+			sync_manual_d 	<= sync_manual;
+			count_reset_d 	<= count_reset;
 
 			IF sync_now = '1' THEN
 				sync_bits <= to_unsigned(GENERATOR_W-1, GENERATOR_BITS + 1);
@@ -201,6 +205,10 @@ BEGIN
 				sync_manual_d 	<= '0';
 				count_reset_d 	<= '0';
 			END IF;
+
+			IF init = '0' AND init_d = '1' THEN
+				lfsr 			<= initial_state;
+			END IF;			
 
 		END IF;
 
